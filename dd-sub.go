@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	"ftp"
 	"log"
 	"os"
 	"os/signal"
 
+	auth "github.com/bramvdbogaerde/go-scp/auth"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	scp "github.com/lkbhargav/go-scp"
+	ssh "golang.org/x/crypto/ssh"
 )
 
 func main() {
@@ -49,8 +51,38 @@ func main() {
 			}
 			println(string(data))
 
-			ftp.Connect("10.0.8.19", 21)
-			download_file := ftp.Download(file_name, dest)
+			// Use SSH key authentication from the auth package
+			// we ignore the host key in this example, please change this if you use this library
+			clientConfig, _ := auth.PrivateKey("shinoda-lab", "~/.ssh", ssh.InsecureIgnoreHostKey())
+
+			// Create a new SCP client
+			client := scp.NewClient("10.0.8.19:21", &clientConfig)
+
+			// Connect to the remote server
+			err_connect := client.Connect()
+
+			if err_connect != nil {
+				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
+				return
+			}
+
+			// Open a file
+			f, _ := os.Open("/tmp")
+
+			// Close client connection after the file has been copied
+			defer client.Close()
+
+			// Close the file after it has been copied
+			defer f.Close()
+
+			// Finaly, copy the file over
+			// Usage: CopyFile(fileReader, remotePath, permission)
+
+			err_copy_file := client.CopyFile(f, "file_name", "0655")
+
+			if err_copy_file != nil {
+				fmt.Println("Error while copying file ", err_copy_file)
+			}
 
 		// systemcallがあると知らせる
 		case <-signalCh:
