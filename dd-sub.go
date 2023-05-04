@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"ftp"
 	"log"
 	"os"
 	"os/signal"
@@ -40,15 +41,17 @@ func main() {
 		select {
 		// メッセージをchanellから受信
 		case m := <-msgCh:
-			// println(opts.ClientID)
 			// fmt.Printf("topic: %v, payload: %v\n", m.Topic(), string(m.Payload()))
 			file_name := string(m.Payload())
-			println(file_name)
 			data, err := os.ReadFile(string(file_name))
 			if err != nil {
 				log.Fatal(err)
 			}
 			println(string(data))
+
+			ftp.Connect("10.0.8.19", 21)
+			download_file := ftp.Download(file_name, dest)
+
 		// systemcallがあると知らせる
 		case <-signalCh:
 			fmt.Printf("Interrupt detected.\n")
