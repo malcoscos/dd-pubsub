@@ -14,7 +14,7 @@ func main() {
 	// optsにClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
 	//　BrokerServerのlistに追加
-	opts.AddBroker("tcp://localhost:1883")
+	opts.AddBroker("tcp://10.0.255.76:1883")
 	// clientクラスのインスタンスを作成
 	c := mqtt.NewClient(opts)
 	// BrokerへのconnectionにErrorがないか判定
