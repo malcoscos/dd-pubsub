@@ -8,7 +8,7 @@ import (
 
 	auth "github.com/bramvdbogaerde/go-scp/auth"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	scp "github.com/lkbhargav/go-scp"
+	scp "github.com/povsister/scp"
 	ssh "golang.org/x/crypto/ssh"
 )
 
@@ -45,6 +45,7 @@ func main() {
 		case m := <-msgCh:
 			// fmt.Printf("topic: %v, payload: %v\n", m.Topic(), string(m.Payload()))
 			file_name := string(m.Payload())
+			println(file_name)
 			// data, err := os.ReadFile(string(file_name))
 			// if err != nil {
 			// 	log.Fatal(err)
@@ -57,10 +58,10 @@ func main() {
 			clientConfig, _ := auth.PasswordKey("shinoda-lab", "mansee02", ssh.InsecureIgnoreHostKey())
 
 			// Create a new SCP client
-			client := scp.NewClient("10.0.8.19:22", &clientConfig)
+			client, err_connect := scp.NewClient("10.0.8.19:22", &clientConfig, &scp.ClientOption{})
 
 			// Connect to the remote server
-			err_connect := client.Connect()
+			// err_connect := client.Connect()
 
 			if err_connect != nil {
 				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
@@ -68,18 +69,18 @@ func main() {
 			}
 
 			// Open a file
-			f, _ := os.Open("/tmp")
+			// f, _ := os.Open("/tmp")
 
 			// Close client connection after the file has been copied
-			defer client.Close()
+			// defer client.Close()
 
 			// Close the file after it has been copied
-			defer f.Close()
+			// defer f.Close()
 
 			// Finaly, copy the file over
 			// Usage: CopyFile(fileReader, remotePath, permission)
 
-			err_copy_file := client.CopyFile(f, file_name, "0655")
+			err_copy_file := client.CopyFileFromRemote(file_name, "/tmp", &scp.FileTransferOption{})
 
 			if err_copy_file != nil {
 				fmt.Println("Error while copying file ", err_copy_file)

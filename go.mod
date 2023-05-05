@@ -6,6 +6,7 @@ require github.com/eclipse/paho.mqtt.golang v1.4.2
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.2.1 // indirect
+	github.com/povsister/scp v0.0.0-20210427074412-33febfd9f13e // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 )
