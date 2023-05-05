@@ -45,11 +45,11 @@ func main() {
 		case m := <-msgCh:
 			// fmt.Printf("topic: %v, payload: %v\n", m.Topic(), string(m.Payload()))
 			file_name := string(m.Payload())
-			data, err := os.ReadFile(string(file_name))
-			if err != nil {
-				log.Fatal(err)
-			}
-			println(string(data))
+			// data, err := os.ReadFile(string(file_name))
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			// println(string(data))
 
 			// Use SSH key authentication from the auth package
 			// we ignore the host key in this example, please change this if you use this library
@@ -78,7 +78,7 @@ func main() {
 			// Finaly, copy the file over
 			// Usage: CopyFile(fileReader, remotePath, permission)
 
-			err_copy_file := client.CopyFile(f, "file_name", "0655")
+			err_copy_file := client.CopyFile(f, file_name, "0655")
 
 			if err_copy_file != nil {
 				fmt.Println("Error while copying file ", err_copy_file)
