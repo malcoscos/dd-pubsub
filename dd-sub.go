@@ -57,7 +57,7 @@ func main() {
 			clientConfig, _ := auth.PasswordKey("shinoda-lab", "mansee02", ssh.InsecureIgnoreHostKey())
 
 			// Create a new SCP client
-			client := scp.NewClient("10.0.8.19:21", &clientConfig)
+			client := scp.NewClient("10.0.8.19:22", &clientConfig)
 
 			// Connect to the remote server
 			err_connect := client.Connect()
