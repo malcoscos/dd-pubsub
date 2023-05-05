@@ -26,7 +26,7 @@ func main() {
 		d1 := []byte("hello world")
 		file_name_mnt := fmt.Sprintf("/mnt/test%d.text", i)
 		err := os.WriteFile(file_name_mnt, d1, 0664)
-		file_name_nfs := "/nfs"
+		file_name_nfs := fmt.Sprintf("/nfs/test%d.text", i)
 		if err != nil {
 			fmt.Println(err)
 			return
