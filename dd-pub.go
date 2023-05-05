@@ -24,15 +24,16 @@ func main() {
 	// clientからosのシステムを利用してパケットをbrokerにstoreする
 	for i := 0; i < 5; i++ {
 		d1 := []byte("hello world")
-		file_name := fmt.Sprintf("/tmp/test%d.text", i)
-		err := os.WriteFile(file_name, d1, 0664)
+		file_name_mnt := fmt.Sprintf("/mnt/test%d.text", i)
+		err := os.WriteFile(file_name_mnt, d1, 0664)
+		file_name_nfs := "/nfs"
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		// text := fmt.Sprintf("this is msg #%d!", i)
 
-		token := c.Publish("go-mqtt/sample", 0, false, file_name)
+		token := c.Publish("go-mqtt/sample", 0, false, file_name_nfs)
 
 		token.Wait()
 	}
