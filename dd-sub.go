@@ -53,7 +53,8 @@ func main() {
 
 			// Use SSH key authentication from the auth package
 			// we ignore the host key in this example, please change this if you use this library
-			clientConfig, _ := auth.PrivateKey("shinoda-lab", "~/.ssh", ssh.InsecureIgnoreHostKey())
+			// clientConfig, _ := auth.PrivateKey("shinoda-lab", "~/.ssh", ssh.InsecureIgnoreHostKey())
+			clientConfig, _ := auth.PasswordKey("shinoda-lab", "mansee02", ssh.InsecureIgnoreHostKey())
 
 			// Create a new SCP client
 			client := scp.NewClient("10.0.8.19:21", &clientConfig)
