@@ -61,6 +61,8 @@ func main() {
 				return
 			}
 			fmt.Printf("%+v\n", descriptor)
+
+			file_name := descriptor.Locator
 			// data, err := os.ReadFile(string(file_name))
 			// if err != nil {
 			// 	log.Fatal(err)
