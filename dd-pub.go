@@ -22,8 +22,10 @@ func main() {
 
 	// optsにClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
+
 	//　BrokerServerのlistに追加
 	opts.AddBroker("tcp://10.0.8.25:1883")
+
 	// clientクラスのインスタンスを作成
 	c := mqtt.NewClient(opts)
 	// BrokerへのconnectionにErrorがないか判定
@@ -69,8 +71,4 @@ func main() {
 	c.Disconnect(250)
 	http.ListenAndServe(":8080", nil)
 	fmt.Println("Complete publish")
-}
-
-type data struct {
-	pub_data int
 }

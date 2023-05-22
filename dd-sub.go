@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,13 @@ import (
 	scp "github.com/povsister/scp"
 	ssh "golang.org/x/crypto/ssh"
 )
+
+type Payload struct {
+	Addr    string
+	Port    int
+	Format  string
+	Locator string
+}
 
 func main() {
 	// channelの作成
@@ -44,8 +52,15 @@ func main() {
 		// メッセージをchanellから受信
 		case m := <-msgCh:
 			// fmt.Printf("topic: %v, payload: %v\n", m.Topic(), string(m.Payload()))
-			file_name := string(m.Payload())
-			println(file_name)
+			var descriptor Payload
+			payload_data := string(m.Payload())
+			println(payload_data)
+
+			if err := json.Unmarshal([]byte(payload_data), &descriptor); err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Printf("%+v\n", descriptor)
 			// data, err := os.ReadFile(string(file_name))
 			// if err != nil {
 			// 	log.Fatal(err)
