@@ -51,10 +51,8 @@ func main() {
 		select {
 		// メッセージをchanellから受信
 		case m := <-msgCh:
-			// fmt.Printf("topic: %v, payload: %v\n", m.Topic(), string(m.Payload()))
 			var descriptor Payload
 			payload_data := string(m.Payload())
-			println(payload_data)
 
 			if err := json.Unmarshal([]byte(payload_data), &descriptor); err != nil {
 				fmt.Println(err)
@@ -63,23 +61,15 @@ func main() {
 			fmt.Printf("%+v\n", descriptor)
 
 			file_name := descriptor.Locator
-			// data, err := os.ReadFile(string(file_name))
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-			// println(string(data))
 
 			// Use SSH key authentication from the auth package
 			// we ignore the host key in this example, please change this if you use this library
-			// clientConfig, _ := auth.PrivateKey("shinoda-lab", "~/.ssh", ssh.InsecureIgnoreHostKey())
-			clientConfig, _ := auth.PasswordKey("shinoda-lab", "mansee02", ssh.InsecureIgnoreHostKey())
+			clientConfig, _ := auth.PasswordKey("shinoda-lab", "malcos", ssh.InsecureIgnoreHostKey())
 
 			// Create a new SCP client
 			client, err_connect := scp.NewClient("10.0.8.19:22", &clientConfig, &scp.ClientOption{})
 
 			// Connect to the remote server
-			// err_connect := client.Connect()
-
 			if err_connect != nil {
 				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
 				return
