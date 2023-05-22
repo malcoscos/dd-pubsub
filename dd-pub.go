@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +9,14 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+// json formatの作成
+type Payload struct {
+	Addr    string
+	Port    int
+	Format  string
+	Locator string
+}
 
 func main() {
 
@@ -23,15 +32,34 @@ func main() {
 	}
 	// clientからosのシステムを利用してパケットをbrokerにstoreする
 	for i := 0; i < 5; i++ {
+		nfs_server_addr := "10.0.8.19"
+		nfs_server_port := 22
+		data_format := "file"
+
 		d1 := []byte("hello world")
 		file_name_mnt := fmt.Sprintf("/mnt/test%d.text", i)
+
 		err := os.WriteFile(file_name_mnt, d1, 0664)
-		file_name_nfs := fmt.Sprintf("/nfs/test%d.text", i)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		// text := fmt.Sprintf("this is msg #%d!", i)
+
+		file_name_nfs := fmt.Sprintf("/nfs/test%d.text", i)
+
+		payload_data := Payload{
+			Addr:    nfs_server_addr,
+			Port:    nfs_server_port,
+			Format:  data_format,
+			Locator: file_name_nfs}
+
+		jsonData, err := json.Marshal(payload_data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Printf("%s\n", jsonData)
 
 		token := c.Publish("go-mqtt/sample", 0, false, file_name_nfs)
 
