@@ -63,7 +63,7 @@ func main() {
 
 		fmt.Printf("%s\n", jsonData)
 
-		token := c.Publish("go-mqtt/sample", 0, false, file_name_nfs)
+		token := c.Publish("go-mqtt/sample", 0, false, jsonData)
 
 		token.Wait()
 	}
