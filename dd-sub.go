@@ -71,6 +71,7 @@ func main() {
 			// data_format := descriptor.Format
 			file_name_nfs := descriptor.Location
 			server_addr := fmt.Sprintf("%s:%s", nfs_server_addr, nfs_server_port)
+			fmt.Println(server_addr)
 
 			// auth and create a new SCP client
 			clientConfig, _ := auth.PasswordKey("shinoda-lab", "malcos", ssh.InsecureIgnoreHostKey())
