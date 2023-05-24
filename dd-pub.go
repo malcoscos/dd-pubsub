@@ -10,61 +10,63 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-// json formatの作成
+// json format
 type Payload struct {
-	Addr    string
-	Port    int
-	Format  string
-	Locator string
+	Addr     string
+	Port     int
+	Format   string
+	Location string
 }
 
 func main() {
 
-	// optsにClientOptionsインスタンスのpointerを格納
+	// ClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
 
-	//　BrokerServerのlistに追加
+	//　add broker
 	opts.AddBroker("tcp://10.0.8.25:1883")
 
-	// clientクラスのインスタンスを作成
+	// clientのインスタンスを作成
 	c := mqtt.NewClient(opts)
-	// BrokerへのconnectionにErrorがないか判定
+
+	// connect to broker
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Mqtt error: %s", token.Error())
 	}
-	// clientからosのシステムを利用してパケットをbrokerにstoreする
+
+	// publicsh to broker
 	for i := 0; i < 5; i++ {
-		nfs_server_addr := "10.0.8.19"
-		nfs_server_port := 22
-		data_format := "file"
 
-		d1 := []byte("hello world")
+		// to write file in pub server
 		file_name_mnt := fmt.Sprintf("/mnt/test%d.text", i)
-
+		d1 := []byte("hello world")
 		err := os.WriteFile(file_name_mnt, d1, 0664)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
+		// info of data
+		nfs_server_addr := "10.0.8.19"
+		nfs_server_port := 22
+		data_format := "file"
 		file_name_nfs := fmt.Sprintf("/nfs/test%d.text", i)
-
 		payload_data := Payload{
-			Addr:    nfs_server_addr,
-			Port:    nfs_server_port,
-			Format:  data_format,
-			Locator: file_name_nfs}
+			Addr:     nfs_server_addr,
+			Port:     nfs_server_port,
+			Format:   data_format,
+			Location: file_name_nfs}
 
+		// to encode from golang structure to json
 		jsonData, err := json.Marshal(payload_data)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+		fmt.Printf("submit this data %s\n", jsonData)
 
-		fmt.Printf("%s\n", jsonData)
-
+		// publich to broker
 		token := c.Publish("go-mqtt/sample", 0, false, jsonData)
-
 		token.Wait()
 	}
 

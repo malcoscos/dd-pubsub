@@ -14,10 +14,10 @@ import (
 )
 
 type Payload struct {
-	Addr    string
-	Port    int
-	Format  string
-	Locator string
+	Addr     string
+	Port     int
+	Format   string
+	Location string
 }
 
 func main() {
@@ -29,15 +29,19 @@ func main() {
 	}
 	// optsにClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
-	//　BrokerServerのlistに追加
+
+	//　add broker to list
 	opts.AddBroker("tcp://10.0.8.25:1883")
-	// clientクラスのインスタンスを作成
+
+	// make client instance
 	c := mqtt.NewClient(opts)
-	// Brokerへのconnection及び、Errorがないか判定
+
+	//connect to broker
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Mqtt error: %s", token.Error())
 	}
-	// subscribeするtopicが、正しく設定されているか判定
+
+	// subscribe from broker
 	if subscribeToken := c.Subscribe("go-mqtt/sample", 0, f); subscribeToken.Wait() && subscribeToken.Error() != nil {
 		log.Fatal(subscribeToken.Error())
 	}
@@ -46,28 +50,31 @@ func main() {
 	signalCh := make(chan os.Signal, 1)
 	// systemcallがあると知らせる
 	signal.Notify(signalCh, os.Interrupt)
+
 	// forever
 	for {
 		select {
-		// メッセージをchanellから受信
+		// get message from channel
 		case m := <-msgCh:
 			var descriptor Payload
 			payload_data := string(m.Payload())
 
+			// to decode from golong structure to json
 			if err := json.Unmarshal([]byte(payload_data), &descriptor); err != nil {
 				fmt.Println(err)
 				return
 			}
-			fmt.Printf("%+v\n", descriptor)
 
-			file_name := descriptor.Locator
+			// info of data
+			nfs_server_addr := descriptor.Addr
+			nfs_server_port := descriptor.Port
+			// data_format := descriptor.Format
+			file_name_nfs := descriptor.Location
+			server_addr := fmt.Sprintf("%s:%s", nfs_server_addr, nfs_server_port)
 
-			// Use SSH key authentication from the auth package
-			// we ignore the host key in this example, please change this if you use this library
+			// auth and create a new SCP client
 			clientConfig, _ := auth.PasswordKey("shinoda-lab", "malcos", ssh.InsecureIgnoreHostKey())
-
-			// Create a new SCP client
-			client, err_connect := scp.NewClient("10.0.8.19:22", &clientConfig, &scp.ClientOption{})
+			client, err_connect := scp.NewClient(server_addr, &clientConfig, &scp.ClientOption{})
 
 			// Connect to the remote server
 			if err_connect != nil {
@@ -75,25 +82,13 @@ func main() {
 				return
 			}
 
-			// Open a file
-			// f, _ := os.Open("/tmp")
-
-			// Close client connection after the file has been copied
-			// defer client.Close()
-
-			// Close the file after it has been copied
-			// defer f.Close()
-
-			// Finaly, copy the file over
-			// Usage: CopyFile(fileReader, remotePath, permission)
-
-			err_copy_file := client.CopyFileFromRemote(file_name, "/tmp", &scp.FileTransferOption{})
-
+			// copy the file over
+			err_copy_file := client.CopyFileFromRemote(file_name_nfs, "/tmp", &scp.FileTransferOption{})
 			if err_copy_file != nil {
 				fmt.Println("Error while copying file ", err_copy_file)
 			}
 
-		// systemcallがあると知らせる
+		// to interrupt if there is systemcall
 		case <-signalCh:
 			fmt.Printf("Interrupt detected.\n")
 			c.Disconnect(1000)
