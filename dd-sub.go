@@ -15,7 +15,7 @@ import (
 
 type Payload struct {
 	Addr     string
-	Port     int
+	Port     string
 	Format   string
 	Location string
 }

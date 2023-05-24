@@ -13,7 +13,7 @@ import (
 // json format
 type Payload struct {
 	Addr     string
-	Port     int
+	Port     string
 	Format   string
 	Location string
 }
@@ -48,7 +48,7 @@ func main() {
 
 		// info of data
 		nfs_server_addr := "10.0.8.19"
-		nfs_server_port := 22
+		nfs_server_port := "22"
 		data_format := "file"
 		file_name_nfs := fmt.Sprintf("/nfs/test%d.text", i)
 		payload_data := Payload{
