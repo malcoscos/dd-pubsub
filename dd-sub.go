@@ -1,4 +1,4 @@
-package main
+package dd-pubsub
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ type Payload struct {
 	Location string
 }
 
-func main() {
+func Subscribe() {
 	// channelの作成
 	msgCh := make(chan mqtt.Message)
 	// messageをchannelに送信する関数の作成

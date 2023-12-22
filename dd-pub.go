@@ -1,4 +1,4 @@
-package main
+package dd-pubsub
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ type Payload struct {
 	Location string
 }
 
-func main() {
+func Publish() {
 
 	// ClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
