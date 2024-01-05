@@ -20,7 +20,7 @@ type Payload struct {
 	Location string
 }
 
-func Subscribe() {
+func Subscribe(topic string, qos int, broker_arr string, broker_port string, ssh_username string, ssh_password string, copy_file_dst_path string) {
 	// channelの作成
 	msgCh := make(chan mqtt.Message)
 	// messageをchannelに送信する関数の作成
@@ -31,7 +31,8 @@ func Subscribe() {
 	opts := mqtt.NewClientOptions()
 
 	//　add broker to list
-	opts.AddBroker("tcp://10.0.8.25:1883")
+	broker := fmt.Sprintf("tcp://%d:%d", broker_addr, broker_port)
+	opts.AddBroker(broker)
 
 	// make client instance
 	c := mqtt.NewClient(opts)
@@ -42,7 +43,7 @@ func Subscribe() {
 	}
 
 	// subscribe from broker
-	if subscribeToken := c.Subscribe("go-mqtt/sample", 0, f); subscribeToken.Wait() && subscribeToken.Error() != nil {
+	if subscribeToken := c.Subscribe(topic , qos, nil); subscribeToken.Wait() && subscribeToken.Error() != nil {
 		log.Fatal(subscribeToken.Error())
 	}
 
@@ -68,13 +69,12 @@ func Subscribe() {
 			// info of data
 			nfs_server_addr := descriptor.Addr
 			nfs_server_port := descriptor.Port
-			// data_format := descriptor.Format
+			data_format := descriptor.Format
 			file_name_nfs := descriptor.Location
 			server_addr := fmt.Sprintf("%s:%s", nfs_server_addr, nfs_server_port)
-			fmt.Println(server_addr)
 
 			// auth and create a new SCP client
-			clientConfig, _ := auth.PasswordKey("shinoda-lab", "malcos", ssh.InsecureIgnoreHostKey())
+			clientConfig, _ := auth.PasswordKey(ssh_username, ssh_password, ssh.InsecureIgnoreHostKey())
 			client, err_connect := scp.NewClient(server_addr, &clientConfig, &scp.ClientOption{})
 
 			// Connect to the remote server
@@ -84,7 +84,7 @@ func Subscribe() {
 			}
 
 			// copy the file over
-			err_copy_file := client.CopyFileFromRemote(file_name_nfs, "/tmp", &scp.FileTransferOption{})
+			err_copy_file := client.CopyFileFromRemote(file_name_nfs, copy_file_dst_path, &scp.FileTransferOption{})
 			if err_copy_file != nil {
 				fmt.Println("Error while copying file ", err_copy_file)
 			}
