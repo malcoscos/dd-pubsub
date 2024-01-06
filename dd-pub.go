@@ -18,13 +18,26 @@ type Payload struct {
 	Location string
 }
 
-func Publish(topic string, qos byte, retained bool, payload interface{}, data_format string, broker_addr string, broker_port string, nfs_server_addr string, nfs_server_port string, file_path string) {
+type PubArg struct {
+	Topic         string
+	Qos           string
+	Retained      bool
+	Payload       interface{}
+	DataFormat    string
+	BrokerAddr    string
+	BrokerPort    string
+	NFSServerAddr string
+	NFSServerPort string
+	FilePath      string
+}
+
+func Publish(p *PubArg) {
 
 	// ClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
 
 	//　add broker
-	broker := fmt.Sprintf("tcp://%d:%d", broker_addr, broker_port)
+	broker := fmt.Sprintf("tcp://%d:%d", p.BrokerAddr, p.BrokerPort)
 	opts.AddBroker(broker)
 
 	// clientのインスタンスを作成
@@ -36,7 +49,7 @@ func Publish(topic string, qos byte, retained bool, payload interface{}, data_fo
 	}
 
 	// to write file in pub server
-	err := os.WriteFile(file_path, payload)
+	err := os.WriteFile(p.FilePath, p.Payload)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -44,10 +57,10 @@ func Publish(topic string, qos byte, retained bool, payload interface{}, data_fo
 
 	// info of data
 	payload_data := Payload{
-		Addr:     nfs_server_addr,
-		Port:     nfs_server_port,
-		Format:   data_format,
-		Location: file_path
+		Addr:     p.NFSServerAddr,
+		Port:     p.NFSServerPort,
+		Format:   p.DataFormat,
+		Location: p.FilePath
 	}
 
 	// to encode from golang structure to json
@@ -58,7 +71,7 @@ func Publish(topic string, qos byte, retained bool, payload interface{}, data_fo
 	}
 
 	// publich to broker
-	token := c.Publish(topic, pos, retained, jsonData)
+	token := c.Publish(p.Topic, p.Qos, p.Retained, jsonData)
 	token.Wait()
 
 	c.Disconnect(250)

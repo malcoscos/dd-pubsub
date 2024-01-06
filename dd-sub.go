@@ -20,7 +20,17 @@ type Payload struct {
 	Location string
 }
 
-func Subscribe() {
+type SubArg struct {
+	Topic            string
+	Qos              int
+	BrokerAddr       string
+	BrokerPort       string
+	SSHUsername      string
+	SSHPassword      string
+	CopyFileDstPath  string
+}
+
+func Subscribe(s *SubArg) {
 	// channelの作成
 	msgCh := make(chan mqtt.Message)
 	// messageをchannelに送信する関数の作成
@@ -31,7 +41,8 @@ func Subscribe() {
 	opts := mqtt.NewClientOptions()
 
 	//　add broker to list
-	opts.AddBroker("tcp://10.0.8.25:1883")
+	broker := fmt.Sprintf("tcp://%d:%d", s.BrokerAddr, s.BrokerPort)
+	opts.AddBroker(broker)
 
 	// make client instance
 	c := mqtt.NewClient(opts)
@@ -42,7 +53,7 @@ func Subscribe() {
 	}
 
 	// subscribe from broker
-	if subscribeToken := c.Subscribe("go-mqtt/sample", 0, f); subscribeToken.Wait() && subscribeToken.Error() != nil {
+	if subscribeToken := c.Subscribe(s.Topic , s.Qos, nil); subscribeToken.Wait() && subscribeToken.Error() != nil {
 		log.Fatal(subscribeToken.Error())
 	}
 
@@ -68,14 +79,13 @@ func Subscribe() {
 			// info of data
 			nfs_server_addr := descriptor.Addr
 			nfs_server_port := descriptor.Port
-			// data_format := descriptor.Format
+			data_format := descriptor.Format
 			file_name_nfs := descriptor.Location
-			server_addr := fmt.Sprintf("%s:%s", nfs_server_addr, nfs_server_port)
-			fmt.Println(server_addr)
+			server_addr := fmt.Sprintf("%s:%s", s.NFSServerAddr, s.NFSServerPort)
 
 			// auth and create a new SCP client
-			clientConfig, _ := auth.PasswordKey("shinoda-lab", "malcos", ssh.InsecureIgnoreHostKey())
-			client, err_connect := scp.NewClient(server_addr, &clientConfig, &scp.ClientOption{})
+			clientConfig, _ := auth.PasswordKey(s.SSHUsername, s.SSHPassword, ssh.InsecureIgnoreHostKey())
+			client, err_connect := scp.NewClient(s.ServerAddr, &clientConfig, &scp.ClientOption{})
 
 			// Connect to the remote server
 			if err_connect != nil {
@@ -84,7 +94,7 @@ func Subscribe() {
 			}
 
 			// copy the file over
-			err_copy_file := client.CopyFileFromRemote(file_name_nfs, "/tmp", &scp.FileTransferOption{})
+			err_copy_file := client.CopyFileFromRemote(file_name_nfs, s.CopyFileDstPath, &scp.FileTransferOption{})
 			if err_copy_file != nil {
 				fmt.Println("Error while copying file ", err_copy_file)
 			}
