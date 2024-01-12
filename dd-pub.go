@@ -20,7 +20,7 @@ type Payload struct {
 
 type PubArg struct {
 	Topic         string
-	Qos           string
+	Qos           byte
 	Retained      bool
 	Payload       interface{}
 	DataFormat    string
