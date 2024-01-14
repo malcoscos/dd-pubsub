@@ -1,4 +1,4 @@
-package dd-pubsub
+package dd_pubsub
 
 import (
 	"encoding/json"
@@ -13,21 +13,23 @@ import (
 	ssh "golang.org/x/crypto/ssh"
 )
 
-type Payload struct {
-	Addr     string
-	Port     string
-	Format   string
-	Location string
-}
+// type Descriptor struct {
+// 	// Addr    string
+// 	// Port    string
+// 	Format  string
+// 	Locator string
+// }
 
 type SubArg struct {
-	Topic            string
-	Qos              int
-	BrokerAddr       string
-	BrokerPort       string
-	SSHUsername      string
-	SSHPassword      string
-	CopyFileDstPath  string
+	Topic           string
+	Qos             byte
+	BrokerAddr      string
+	BrokerPort      string
+	NFSServerAddr   string
+	NFSServerPort   string
+	SSHUsername     string
+	SSHPassword     string
+	CopyFileDstPath string
 }
 
 func Subscribe(s *SubArg) {
@@ -41,7 +43,7 @@ func Subscribe(s *SubArg) {
 	opts := mqtt.NewClientOptions()
 
 	//　add broker to list
-	broker := fmt.Sprintf("tcp://%d:%d", s.BrokerAddr, s.BrokerPort)
+	broker := fmt.Sprintf("tcp://%s:%s", s.BrokerAddr, s.BrokerPort)
 	opts.AddBroker(broker)
 
 	// make client instance
@@ -53,7 +55,7 @@ func Subscribe(s *SubArg) {
 	}
 
 	// subscribe from broker
-	if subscribeToken := c.Subscribe(s.Topic , s.Qos, nil); subscribeToken.Wait() && subscribeToken.Error() != nil {
+	if subscribeToken := c.Subscribe(s.Topic, s.Qos, f); subscribeToken.Wait() && subscribeToken.Error() != nil {
 		log.Fatal(subscribeToken.Error())
 	}
 
@@ -67,7 +69,7 @@ func Subscribe(s *SubArg) {
 		select {
 		// get message from channel
 		case m := <-msgCh:
-			var descriptor Payload
+			var descriptor Descriptor
 			payload_data := string(m.Payload())
 
 			// to decode from golong structure to json
@@ -77,22 +79,18 @@ func Subscribe(s *SubArg) {
 			}
 
 			// info of data
-			nfs_server_addr := descriptor.Addr
-			nfs_server_port := descriptor.Port
-			data_format := descriptor.Format
-			file_name_nfs := descriptor.Location
+			file_name_nfs := descriptor.Locator
 			server_addr := fmt.Sprintf("%s:%s", s.NFSServerAddr, s.NFSServerPort)
 
 			// auth and create a new SCP client
-			clientConfig, _ := auth.PasswordKey(s.SSHUsername, s.SSHPassword, ssh.InsecureIgnoreHostKey())
-			client, err_connect := scp.NewClient(s.ServerAddr, &clientConfig, &scp.ClientOption{})
+			client_config, _ := auth.PasswordKey(s.SSHUsername, s.SSHPassword, ssh.InsecureIgnoreHostKey())
+			client, err_connect := scp.NewClient(server_addr, &client_config, &scp.ClientOption{})
 
 			// Connect to the remote server
 			if err_connect != nil {
 				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
 				return
 			}
-
 			// copy the file over
 			err_copy_file := client.CopyFileFromRemote(file_name_nfs, s.CopyFileDstPath, &scp.FileTransferOption{})
 			if err_copy_file != nil {

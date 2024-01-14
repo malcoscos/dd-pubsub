@@ -1,4 +1,4 @@
-package dd-pubsub
+package dd_pubsub
 
 import (
 	"encoding/json"
@@ -11,11 +11,11 @@ import (
 )
 
 // json format
-type Payload struct {
-	Addr     string
-	Port     string
-	Format   string
-	Location string
+type Descriptor struct {
+	// Addr    string
+	// Port    string
+	Format  string
+	Locator string
 }
 
 type PubArg struct {
@@ -37,7 +37,7 @@ func Publish(p *PubArg) {
 	opts := mqtt.NewClientOptions()
 
 	//　add broker
-	broker := fmt.Sprintf("tcp://%d:%d", p.BrokerAddr, p.BrokerPort)
+	broker := fmt.Sprintf("tcp://%s:%s", p.BrokerAddr, p.BrokerPort)
 	opts.AddBroker(broker)
 
 	// clientのインスタンスを作成
@@ -48,19 +48,24 @@ func Publish(p *PubArg) {
 		log.Fatalf("Mqtt error: %s", token.Error())
 	}
 
-	// to write file in pub server
-	err := os.WriteFile(p.FilePath, p.Payload)
+	// JSON形式のデータを[]byteに変換
+	payloadBytes, err := json.Marshal(p.Payload)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalf("Error marshalling payload: %s", err)
+	}
+
+	// ファイルにデータを書き込む
+	err = os.WriteFile(p.FilePath, payloadBytes, 0644)
+	if err != nil {
+		log.Fatalf("Error writing file: %s", err)
 	}
 
 	// info of data
-	payload_data := Payload{
-		Addr:     p.NFSServerAddr,
-		Port:     p.NFSServerPort,
-		Format:   p.DataFormat,
-		Location: p.FilePath
+	payload_data := Descriptor{
+		// Addr:    p.NFSServerAddr,
+		// Port:    p.NFSServerPort,
+		Format:  p.DataFormat,
+		Locator: p.FilePath,
 	}
 
 	// to encode from golang structure to json
