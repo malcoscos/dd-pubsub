@@ -13,13 +13,6 @@ import (
 	ssh "golang.org/x/crypto/ssh"
 )
 
-// type Descriptor struct {
-// 	// Addr    string
-// 	// Port    string
-// 	Format  string
-// 	Locator string
-// }
-
 type SubArg struct {
 	Topic           string
 	Qos             byte
@@ -91,6 +84,7 @@ func Subscribe(s *SubArg) {
 				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
 				return
 			}
+
 			// copy the file over
 			err_copy_file := client.CopyFileFromRemote(file_name_nfs, s.CopyFileDstPath, &scp.FileTransferOption{})
 			if err_copy_file != nil {
