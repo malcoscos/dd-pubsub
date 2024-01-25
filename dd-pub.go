@@ -1,35 +1,39 @@
 package dd_pubsub
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	redis "github.com/go-redis/redis/v8"
 )
 
 // json format
 type Descriptor struct {
-	// Addr    string
-	// Port    string
-	Format  string
-	Locator string
+	Format       string
+	Locator      string
+	DatabaseAddr string
+	DatabasePort string
+	TimeStamp    string
+	Header       string
 }
 
 type PubArg struct {
-	Topic         string
-	Qos           byte
-	Retained      bool
-	Payload       interface{}
-	DataFormat    string
-	BrokerAddr    string
-	BrokerPort    string
-	NFSServerAddr string
-	NFSServerPort string
-	FilePath      string
+	Topic        string
+	Qos          byte
+	Retained     bool
+	Payload      interface{}
+	DataFormat   string
+	BrokerAddr   string
+	BrokerPort   string
+	DatabaseAddr string
+	DatabasePort string
 }
+
+var ctx = context.Background()
 
 func Publish(p *PubArg) {
 
@@ -48,24 +52,37 @@ func Publish(p *PubArg) {
 		log.Fatalf("Mqtt error: %s", token.Error())
 	}
 
-	// JSON形式のデータを[]byteに変換
-	payloadBytes, err := json.Marshal(p.Payload)
+	// Redisクライアントの作成
+	redis_addr := fmt.Sprintf("%s:%s", p.DatabaseAddr, p.DatabasePort)
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     redis_addr, // Redisサーバーのアドレス
+		Password: "",         // パスワードがない場合は空文字列
+		DB:       0,          // 使用するデータベース
+	})
+
+	// idを作成
+	newId, err := rdb.Incr(ctx, "unique_counter").Result()
 	if err != nil {
-		log.Fatalf("Error marshalling payload: %s", err)
+		log.Fatalf("Error incrementing counter: %v", err)
 	}
 
-	// ファイルにデータを書き込む
-	err = os.WriteFile(p.FilePath, payloadBytes, 0644)
+	// 生成されたIDをキーとして使用
+	key := fmt.Sprintf("%s:%d", p.Topic, newId)
+
+	// キーと値をセット
+	err = rdb.Set(ctx, key, p.Payload, 0).Err()
 	if err != nil {
-		log.Fatalf("Error writing file: %s", err)
+		log.Fatalf("Error setting value: %v", err)
 	}
 
 	// info of data
 	payload_data := Descriptor{
-		// Addr:    p.NFSServerAddr,
-		// Port:    p.NFSServerPort,
-		Format:  p.DataFormat,
-		Locator: p.FilePath,
+		DatabaseAddr: p.DatabaseAddr,
+		DatabasePort: p.DatabasePort,
+		Format:       p.DataFormat,
+		Locator:      key,
+		TimeStamp:    "hoge",
+		Header:       "hoge",
 	}
 
 	// to encode from golang structure to json
@@ -79,7 +96,14 @@ func Publish(p *PubArg) {
 	token := c.Publish(p.Topic, p.Qos, p.Retained, jsonData)
 	token.Wait()
 
+	// mqttクライアントのクローズ
 	c.Disconnect(250)
 	http.ListenAndServe(":8080", nil)
 	fmt.Println("Complete publish")
+
+	// Redisクライアントのクローズ
+	err = rdb.Close()
+	if err != nil {
+		log.Fatalf("Failed to close client: %v", err)
+	}
 }

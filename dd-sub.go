@@ -1,45 +1,53 @@
 package dd_pubsub
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 
-	auth "github.com/bramvdbogaerde/go-scp/auth"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	scp "github.com/povsister/scp"
-	ssh "golang.org/x/crypto/ssh"
+	redis "github.com/go-redis/redis/v8"
 )
 
-type SubArg struct {
-	Topic           string
-	Qos             byte
-	BrokerAddr      string
-	BrokerPort      string
-	NFSServerAddr   string
-	NFSServerPort   string
-	SSHUsername     string
-	SSHPassword     string
-	CopyFileDstPath string
+type Descriptor struct {
+	Format       string
+	Locator      string
+	DatabaseAddr string
+	DatabasePort string
+	TimeStamp    string
+	Header       string
 }
 
+type SubArg struct {
+	Topic      string
+	Qos        byte
+	BrokerAddr string
+	BrokerPort string
+}
+
+var ctx = context.Background()
+
 func Subscribe(s *SubArg) {
+
 	// channelの作成
 	msgCh := make(chan mqtt.Message)
+
 	// messageをchannelに送信する関数の作成
 	var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		msgCh <- msg
 	}
+
 	// optsにClientOptionsインスタンスのpointerを格納
 	opts := mqtt.NewClientOptions()
 
-	//　add broker to list
+	//　add broker
 	broker := fmt.Sprintf("tcp://%s:%s", s.BrokerAddr, s.BrokerPort)
 	opts.AddBroker(broker)
 
-	// make client instance
+	// clientのインスタンスを作成
 	c := mqtt.NewClient(opts)
 
 	//connect to broker
@@ -72,23 +80,24 @@ func Subscribe(s *SubArg) {
 			}
 
 			// info of data
-			file_name_nfs := descriptor.Locator
-			server_addr := fmt.Sprintf("%s:%s", s.NFSServerAddr, s.NFSServerPort)
+			redis_addr := fmt.Sprintf("%s:%s", descriptor.DatabaseAddr, descriptor.DatabasePort)
+			rdb := redis.NewClient(&redis.Options{
+				Addr:     redis_addr, // Redisサーバーのアドレス
+				Password: "",         // パスワードがない場合は空文字列
+				DB:       0,          // 使用するデータベース
+			})
 
-			// auth and create a new SCP client
-			client_config, _ := auth.PasswordKey(s.SSHUsername, s.SSHPassword, ssh.InsecureIgnoreHostKey())
-			client, err_connect := scp.NewClient(server_addr, &client_config, &scp.ClientOption{})
-
-			// Connect to the remote server
-			if err_connect != nil {
-				fmt.Println("Couldn't establish a connection to the remote server ", err_connect)
-				return
+			// キーから値を取得
+			val, err := rdb.Get(ctx, descriptor.Locator).Result()
+			if err != nil {
+				log.Fatalf("Failed to get key: %v", err)
 			}
+			fmt.Println("get this data: ", val)
 
-			// copy the file over
-			err_copy_file := client.CopyFileFromRemote(file_name_nfs, s.CopyFileDstPath, &scp.FileTransferOption{})
-			if err_copy_file != nil {
-				fmt.Println("Error while copying file ", err_copy_file)
+			// Redisクライアントのクローズ
+			err = rdb.Close()
+			if err != nil {
+				log.Fatalf("Failed to close client: %v", err)
 			}
 
 		// to interrupt if there is systemcall
