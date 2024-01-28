@@ -12,13 +12,6 @@ import (
 	redis "github.com/go-redis/redis/v8"
 )
 
-type SubArg struct {
-	Topic      string
-	Qos        byte
-	BrokerAddr string
-	BrokerPort string
-}
-
 var ctx = context.Background()
 
 func Subscribe(s *SubArg) {
