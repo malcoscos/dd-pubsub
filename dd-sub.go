@@ -12,15 +12,6 @@ import (
 	redis "github.com/go-redis/redis/v8"
 )
 
-type Descriptor struct {
-	Format       string
-	Locator      string
-	DatabaseAddr string
-	DatabasePort string
-	TimeStamp    string
-	Header       string
-}
-
 type SubArg struct {
 	Topic      string
 	Qos        byte

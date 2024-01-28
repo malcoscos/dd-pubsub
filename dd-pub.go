@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	redis "github.com/go-redis/redis/v8"
@@ -33,8 +34,6 @@ type PubArg struct {
 	DatabasePort string
 }
 
-var ctx = context.Background()
-
 func Publish(p *PubArg) {
 
 	// ClientOptionsインスタンスのpointerを格納
@@ -51,6 +50,8 @@ func Publish(p *PubArg) {
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Mqtt error: %s", token.Error())
 	}
+
+	var ctx = context.Background()
 
 	// Redisクライアントの作成
 	redis_addr := fmt.Sprintf("%s:%s", p.DatabaseAddr, p.DatabasePort)
@@ -75,13 +76,17 @@ func Publish(p *PubArg) {
 		log.Fatalf("Error setting value: %v", err)
 	}
 
+	// 時刻の取得
+	now := time.Now()
+	time_stamp := fmt.Sprint(now.Format(time.RFC3339))
+
 	// info of data
 	payload_data := Descriptor{
 		DatabaseAddr: p.DatabaseAddr,
 		DatabasePort: p.DatabasePort,
 		Format:       p.DataFormat,
 		Locator:      key,
-		TimeStamp:    "hoge",
+		TimeStamp:    time_stamp,
 		Header:       "hoge",
 	}
 
