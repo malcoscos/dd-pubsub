@@ -1,7 +1,8 @@
 package dd_pubsub
 
 type Descriptor struct {
-	Format       string
+	Topic        string
+	DataType     string
 	Locator      string
 	DatabaseAddr string
 	DatabasePort string
@@ -10,15 +11,16 @@ type Descriptor struct {
 }
 
 type PubArg struct {
-	Topic        string
-	Qos          byte
-	Retained     bool
-	Payload      interface{}
-	DataFormat   string
-	BrokerAddr   string
-	BrokerPort   string
-	DatabaseAddr string
-	DatabasePort string
+	Topic      string
+	Qos        byte
+	Retained   bool
+	Payload    interface{}
+	BrokerAddr string
+	BrokerPort string
+	RedisAddr  string
+	RedisPort  string
+	MinioAddr  string
+	MinioPort  string
 }
 
 type SubArg struct {
