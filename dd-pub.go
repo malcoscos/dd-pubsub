@@ -19,17 +19,14 @@ func Publish(p *PubArg) {
 
 	// configure minio addr and auth
 	database_addr := fmt.Sprintf("%s:%s", p.StrageAddr, p.StragePort)
-	accessKeyID := "hoge"
-	secretAccessKey := "hoge_hoge"
 	useSSL := false
 
 	// create minio client
 	var minioClient *minio.Client
 	var err error
-
 	if p.StrageId != "" {
 		minioClient, err = minio.New(database_addr, &minio.Options{
-			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+			Creds:  credentials.NewStaticV4(p.StrageId, p.StrageKey, ""),
 			Secure: useSSL,
 		})
 		if err != nil {
@@ -99,7 +96,5 @@ func Publish(p *PubArg) {
 	// publich to broker
 	token := p.MqttClient.Publish(p.Topic, p.Qos, p.Retained, jsonData)
 	token.Wait()
-
-	// mqttクライアントのクローズ
 	fmt.Println("Complete publish")
 }

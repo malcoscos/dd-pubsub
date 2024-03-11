@@ -9,7 +9,7 @@ import (
 	"os/signal"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	redis "github.com/go-redis/redis/v8"
+	websocket "github.com/gorilla/websocket"
 	minio "github.com/minio/minio-go/v7"
 	credentials "github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -18,24 +18,18 @@ var ctx = context.Background()
 
 func Subscribe(s *SubArg) {
 
-	// channelの作成
+	// make channel
 	msgCh := make(chan mqtt.Message)
-
-	// messageをchannelに送信する関数の作成
 	var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		msgCh <- msg
 	}
-
-	// optsにClientOptionsインスタンスのpointerを格納
+	// configure mqtt client options
 	opts := mqtt.NewClientOptions()
-
 	//　add broker
-	broker := fmt.Sprintf("tcp://%s:%s", s.BrokerAddr, s.BrokerPort)
+	broker := fmt.Sprintf("tcp://%s:%s", "127.0.0.1", "1883")
 	opts.AddBroker(broker)
-
-	// clientのインスタンスを作成
+	// make mqtt client
 	c := mqtt.NewClient(opts)
-
 	//connect to broker
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Mqtt error: %s", token.Error())
@@ -48,7 +42,7 @@ func Subscribe(s *SubArg) {
 
 	// systemcallを受け取るchanenlの作成
 	signalCh := make(chan os.Signal, 1)
-	// systemcallがあると知らせる
+	// notify systemcall
 	signal.Notify(signalCh, os.Interrupt)
 
 	// forever
@@ -65,28 +59,26 @@ func Subscribe(s *SubArg) {
 				return
 			}
 
-			if descriptor.DataType == "tiny" {
-				// info of data
-				redis_addr := fmt.Sprintf("%s:%s", descriptor.DatabaseAddr, descriptor.DatabasePort)
-				rdb := redis.NewClient(&redis.Options{
-					Addr:     redis_addr, // Redisサーバーのアドレス
-					Password: "",         // パスワードがない場合は空文字列
-					DB:       0,          // 使用するデータベース
-				})
+			if descriptor.DataType == "video_data" {
+				url := fmt.Sprintf("ws://%s/%s", descriptor.DatabaseAddr, descriptor.Locator)
+				dialer := websocket.DefaultDialer
+				// WebSocketサーバーに接続
+				conn, _, err := dialer.Dial(url, nil)
 
-				// キーから値を取得
-				val, err := rdb.Get(ctx, descriptor.Locator).Result()
 				if err != nil {
-					log.Fatalf("Failed to get key: %v", err)
+					log.Fatalf("WebSocket接続に失敗: %v", err)
 				}
-				fmt.Println("get this data: ", val)
+				defer conn.Close()
 
-				// Redisクライアントのクローズ
-				err = rdb.Close()
+				// サーバーからのメッセージを受信して表示するループ
+				_, message, err := conn.ReadMessage()
 				if err != nil {
-					log.Fatalf("Failed to close client: %v", err)
+					log.Fatalf("メッセージの読み取りに失敗: %v", err)
 				}
-			} else {
+				// 受信したメッセージを表示
+				fmt.Printf("受信メッセージ: %s\n", message)
+
+			} else if descriptor.DataType == "image" || descriptor.DataType == "tiny_data" {
 				database_addr := fmt.Sprintf("%s:%s", descriptor.DatabaseAddr, descriptor.DatabasePort)
 				accessKeyID := "hoge"          // アクセスキーID
 				secretAccessKey := "hoge_hoge" // シークレットアクセスキー
@@ -101,10 +93,9 @@ func Subscribe(s *SubArg) {
 					log.Fatalln(err)
 				}
 
-				bucket_name := descriptor.Topic   // バケット名
-				object_name := descriptor.Locator // オブジェクト名
-
 				// オブジェクトを取得
+				bucket_name := descriptor.Topic
+				object_name := descriptor.Locator
 				object, err := minioClient.GetObject(context.Background(), bucket_name, object_name, minio.GetObjectOptions{})
 				if err != nil {
 					fmt.Print("helllo")

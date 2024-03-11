@@ -30,6 +30,5 @@ type PubArg struct {
 type SubArg struct {
 	Topic      string
 	Qos        byte
-	BrokerAddr string
-	BrokerPort string
+	MqttClient mqtt.Client
 }

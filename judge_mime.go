@@ -18,14 +18,14 @@ func ProcessFile(data interface{}) string {
 		fmt.Println("Processing video file with ffmpeg...")
 		// ここでffmpegを実行します。
 		// 実際にはffmpegコマンドはファイルを要求するため、ファイルへの書き出しが必要です。
-		return "unstructured_data"
+		return "video_data"
 	case mimeType == "image/jpeg" || mimeType == "image/png":
 		fmt.Println("Processing image file with jhead...")
 		// ここでjheadを実行します。
 		// 実際にはjheadコマンドもファイルを要求するため、ファイルへの書き出しが必要です。
-		return "unstructured_data"
+		return "image_data"
 	default:
 		fmt.Println("No action required for this file type.")
-		return "structured_data"
+		return "tiny_data"
 	}
 }
