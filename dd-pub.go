@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
+	uuid "github.com/google/uuid"
 	minio "github.com/minio/minio-go/v7"
 	credentials "github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -100,7 +100,7 @@ func Publish(p *PubArg) {
 		DataType:     data_mime_type,
 		Locator:      object_name,
 		TimeStamp:    time_stamp,
-		Header:       "hoge",
+		Header:       "hoge", // This attr is used after the ffmpeg implementation is finished
 	}
 
 	// to encode from golang structure to json
