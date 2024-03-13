@@ -21,10 +21,11 @@ type PubArg struct {
 	// Now only using object strage but it is ok that you can branch structured and unstructured data
 	// RedisAddr  string //strage for structured_data
 	// RedisPort  string //strage for structured_data
-	StrageAddr string //strage for unstructured_data
-	StragePort string //strage for unstructured_data
-	StrageId   string
-	StrageKey  string
+	StrageAddr     string //strage for unstructured_data
+	StragePort     string //strage for unstructured_data
+	StrageId       string
+	StrageKey      string
+	MovieStrageDir string
 }
 
 type SubArg struct {
