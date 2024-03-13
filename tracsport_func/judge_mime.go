@@ -1,4 +1,4 @@
-package dd_pubsub
+package transport_func
 
 import (
 	"fmt"
