@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 
@@ -26,17 +25,16 @@ func Subscribe(s *types.SubArg) {
 	c := s.MqttClient
 	//connect to broker
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("Mqtt error: %s", token.Error())
+		fmt.Println(token.Error())
 	}
 
 	// subscribe from broker
 	if subscribeToken := c.Subscribe(s.Topic, s.Qos, f); subscribeToken.Wait() && subscribeToken.Error() != nil {
-		log.Fatal(subscribeToken.Error())
+		fmt.Println(subscribeToken.Error())
 	}
 
-	// systemcallを受け取るchanenlの作成
+	//  notify systemcall get from channel
 	signalCh := make(chan os.Signal, 1)
-	// notify systemcall
 	signal.Notify(signalCh, os.Interrupt)
 
 	// forever
@@ -54,20 +52,19 @@ func Subscribe(s *types.SubArg) {
 			}
 
 			if descriptor.DataType == "video_data" {
+				// connect to server of websocket
 				url := fmt.Sprintf("ws://%s/%s", descriptor.DatabaseAddr, descriptor.Locator)
 				dialer := websocket.DefaultDialer
-				// WebSocketサーバーに接続
 				conn, _, err := dialer.Dial(url, nil)
-
 				if err != nil {
-					log.Fatalf("WebSocket接続に失敗: %v", err)
+					fmt.Println(err)
 				}
 				defer conn.Close()
 
 				// サーバーからのメッセージを受信して表示するループ
 				_, message, err := conn.ReadMessage()
 				if err != nil {
-					log.Fatalf("メッセージの読み取りに失敗: %v", err)
+					fmt.Println(err)
 				}
 				// 受信したメッセージを表示
 				fmt.Printf("受信メッセージ: %s\n", message)
@@ -84,7 +81,7 @@ func Subscribe(s *types.SubArg) {
 					Secure: useSSL,
 				})
 				if err != nil {
-					log.Fatalln(err)
+					fmt.Println(err)
 				}
 
 				// オブジェクトを取得
@@ -92,10 +89,9 @@ func Subscribe(s *types.SubArg) {
 				object_name := descriptor.Locator
 				object, err := minioClient.GetObject(context.Background(), bucket_name, object_name, minio.GetObjectOptions{})
 				if err != nil {
-					fmt.Print("helllo")
-					log.Fatalln(err)
+					fmt.Println(err)
 				}
-				log.Printf("Successfully download %s", object_name)
+				fmt.Println("Successfully download %s", object_name)
 				defer object.Close()
 			}
 
