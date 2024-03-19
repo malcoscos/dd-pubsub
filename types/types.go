@@ -1,4 +1,4 @@
-package dd_pubsub
+package types
 
 import mqtt "github.com/eclipse/paho.mqtt.golang"
 

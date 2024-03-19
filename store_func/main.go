@@ -1,57 +1,17 @@
-package dd_pubsub
+package store_func
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
-	"time"
 
-	uuid "github.com/google/uuid"
-	transport "github.com/malcoscos/dd-pubsub/transport_func"
-	minio "github.com/minio/minio-go/v7"
-	credentials "github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v7"
 )
-
-func Publish(p *PubArg) {
-	var data_mime_type string = transport.ProcessFile(p.Payload)
-	var object_name string = uuid.NewString()
-
-	if data_mime_type == "video" {
-		object_name = store_video_data(p.Payload, object_name, p.MovieStrageDir)
-	} else if data_mime_type == "image" || data_mime_type == "tiny_data" {
-		object_name = store_tiny_data(p, object_name)
-	}
-
-	// descriptor of real data
-	now := time.Now()
-	time_stamp := fmt.Sprint(now.Format(time.RFC3339))
-	descriptor := Descriptor{
-		Topic:        p.Topic,
-		DatabaseAddr: p.StrageAddr,
-		DatabasePort: p.StragePort,
-		DataType:     data_mime_type,
-		Locator:      object_name,
-		TimeStamp:    time_stamp,
-		Header:       "hoge", // This attr is used after the ffmpeg implementation is finished
-	}
-
-	// to encode from golang structure to json
-	jsonData, err := json.Marshal(descriptor)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// publich to broker
-	token := p.MqttClient.Publish(p.Topic, p.Qos, p.Retained, jsonData)
-	token.Wait()
-	fmt.Println("Complete publish")
-}
 
 func store_tiny_data(p *PubArg, object_name string) string {
 	// configure minio addr and auth
