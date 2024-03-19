@@ -9,11 +9,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/malcoscos/dd-pubsub/types"
 	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-func store_tiny_data(p *PubArg, object_name string) string {
+func StoreTinyData(p *types.PubArg, object_name string) string {
 	// configure minio addr and auth
 	database_addr := fmt.Sprintf("%s:%s", p.StrageAddr, p.StragePort)
 	useSSL := false //recommend to change to true in the production env
@@ -41,6 +42,7 @@ func store_tiny_data(p *PubArg, object_name string) string {
 	}
 	// upload data to minio
 	bucket_name := p.Topic
+	var ctx = context.Background()
 	exists, err := minioClient.BucketExists(ctx, bucket_name)
 	if err != nil {
 		log.Fatalln(err)
@@ -69,14 +71,14 @@ func store_tiny_data(p *PubArg, object_name string) string {
 	return object_name
 }
 
-func store_video_data(data interface{}, object_name string, dir string) string {
+func StoreVideoData(data interface{}, object_name string, dir string) string {
 	payload_data, ok := data.([]byte)
 	if !ok {
 		fmt.Println("Failed to exchange data to byte", ok)
 		return ""
 	}
 	// データをファイルに保存し、ファイルパスを取得
-	filepath, err := saveDataToFile(payload_data, dir, object_name)
+	filepath, err := SaveDataToFile(payload_data, dir, object_name)
 	if err != nil {
 		fmt.Println("Failed to save data to file:", err)
 		return ""
@@ -85,7 +87,7 @@ func store_video_data(data interface{}, object_name string, dir string) string {
 	return filepath
 }
 
-func saveDataToFile(data []byte, dir, file_name string) (string, error) {
+func SaveDataToFile(data []byte, dir, file_name string) (string, error) {
 	// ディレクトリを作成（存在しない場合）
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err

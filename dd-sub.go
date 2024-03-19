@@ -10,26 +10,20 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	websocket "github.com/gorilla/websocket"
+	types "github.com/malcoscos/dd-pubsub/types"
 	minio "github.com/minio/minio-go/v7"
 	credentials "github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var ctx = context.Background()
-
-func Subscribe(s *SubArg) {
+func Subscribe(s *types.SubArg) {
 
 	// make channel
 	msgCh := make(chan mqtt.Message)
 	var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		msgCh <- msg
 	}
-	// configure mqtt client options
-	opts := mqtt.NewClientOptions()
-	//　add broker
-	broker := fmt.Sprintf("tcp://%s:%s", "127.0.0.1", "1883")
-	opts.AddBroker(broker)
-	// make mqtt client
-	c := mqtt.NewClient(opts)
+	// mqtt client
+	c := s.MqttClient
 	//connect to broker
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Mqtt error: %s", token.Error())
@@ -50,7 +44,7 @@ func Subscribe(s *SubArg) {
 		select {
 		// get message from channel
 		case m := <-msgCh:
-			var descriptor Descriptor
+			var descriptor types.Descriptor
 			payload_data := string(m.Payload())
 
 			// to decode from golong structure to json
