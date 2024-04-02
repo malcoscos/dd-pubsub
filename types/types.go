@@ -32,4 +32,5 @@ type SubArg struct {
 	Topic      string
 	Qos        byte
 	MqttClient mqtt.Client
+	StorePath  string
 }

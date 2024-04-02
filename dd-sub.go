@@ -1,17 +1,13 @@
 package dd_pubsub
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	websocket "github.com/gorilla/websocket"
 	types "github.com/malcoscos/dd-pubsub/types"
-	minio "github.com/minio/minio-go/v7"
-	credentials "github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 func Subscribe(s *types.SubArg) {
@@ -52,49 +48,10 @@ func Subscribe(s *types.SubArg) {
 			}
 
 			if descriptor.DataType == "video_data" {
-				// connect to server of websocket
-				url := fmt.Sprintf("ws://%s/%s", descriptor.DatabaseAddr, descriptor.Locator)
-				dialer := websocket.DefaultDialer
-				conn, _, err := dialer.Dial(url, nil)
-				if err != nil {
-					fmt.Println(err)
-				}
-				defer conn.Close()
-
-				// サーバーからのメッセージを受信して表示するループ
-				_, message, err := conn.ReadMessage()
-				if err != nil {
-					fmt.Println(err)
-				}
-				// 受信したメッセージを表示
-				fmt.Printf("受信メッセージ: %s\n", message)
-
+				RetreiveVideoData(payload_data, descriptor, s)
 			} else if descriptor.DataType == "image" || descriptor.DataType == "tiny_data" {
-				database_addr := fmt.Sprintf("%s:%s", descriptor.DatabaseAddr, descriptor.DatabasePort)
-				accessKeyID := "hoge"          // アクセスキーID
-				secretAccessKey := "hoge_hoge" // シークレットアクセスキー
-				useSSL := false                // SSLを使用する場合はtrueに設定
-
-				// MinIOクライアントの初期化
-				minioClient, err := minio.New(database_addr, &minio.Options{
-					Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-					Secure: useSSL,
-				})
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				// オブジェクトを取得
-				bucket_name := descriptor.Topic
-				object_name := descriptor.Locator
-				object, err := minioClient.GetObject(context.Background(), bucket_name, object_name, minio.GetObjectOptions{})
-				if err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println("Successfully download %s", object_name)
-				defer object.Close()
+				RetreiveTinyData(descriptor, s)
 			}
-
 		// to interrupt if there is systemcall
 		case <-signalCh:
 			fmt.Printf("Interrupt detected.\n")
