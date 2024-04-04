@@ -12,7 +12,7 @@ import (
 )
 
 func Publish(p *types.PubArg) {
-	var data_mime_type string = transport.ProcessFile(p.Payload)
+	var data_mime_type string = transport.ProcessData(p.Payload)
 	var object_name string = uuid.NewString()
 
 	if data_mime_type == "video" {
@@ -31,7 +31,7 @@ func Publish(p *types.PubArg) {
 		DataType:     data_mime_type,
 		Locator:      object_name,
 		TimeStamp:    time_stamp,
-		Header:       "hoge", // This attr is used after the ffmpeg implementation is finished
+		Header:       "hoge", // This attribute is used after the ffmpeg implementation is finished
 	}
 
 	// to encode from golang structure to json

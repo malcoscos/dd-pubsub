@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	retrieve_func "github.com/malcoscos/dd-pubsub/retrieve_func"
 	types "github.com/malcoscos/dd-pubsub/types"
 )
 
@@ -48,9 +49,9 @@ func Subscribe(s *types.SubArg) {
 			}
 
 			if descriptor.DataType == "video_data" {
-				RetreiveVideoData(payload_data, descriptor, s)
+				retrieve_func.RetreiveVideoData(payload_data, descriptor, s)
 			} else if descriptor.DataType == "image" || descriptor.DataType == "tiny_data" {
-				RetreiveTinyData(descriptor, s)
+				retrieve_func.RetreiveTinyData(descriptor, s)
 			}
 		// to interrupt if there is systemcall
 		case <-signalCh:
