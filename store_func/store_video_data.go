@@ -3,6 +3,7 @@ package store_func
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -12,7 +13,7 @@ func StoreVideoData(data interface{}, object_name string, dir string) string {
 		fmt.Println("Failed to exchange data to byte", ok)
 		return ""
 	}
-	// データをファイルに保存し、ファイルパスを取得
+	// Save the data to a file and obtain the file path
 	filepath, err := SaveDataToFile(payload_data, dir, object_name)
 	if err != nil {
 		fmt.Println("Failed to save data to file:", err)
@@ -23,23 +24,38 @@ func StoreVideoData(data interface{}, object_name string, dir string) string {
 }
 
 func SaveDataToFile(data []byte, dir, file_name string) (string, error) {
-	// ディレクトリを作成（存在しない場合）
+	// Create directory if it does not exist
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
 
-	// ファイル名を生成（プレフィックス+タイムスタンプ）
+	// Generate file name (prefix + timestamp)
 	fullPath := filepath.Join(dir, file_name)
 
-	// ファイルを開く（存在しない場合は作成、存在する場合は上書き）
-	file, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	// Create a temporary file
+	tempFile, err := os.CreateTemp("", "example_*.mp4")
 	if err != nil {
+		fmt.Printf("Failed to create temp file: %v\n", err)
 		return "", err
 	}
-	defer file.Close()
+	defer os.Remove(tempFile.Name()) // Remove the temporary file after completion
 
-	// データをファイルに書き込む
-	if _, err = file.Write(data); err != nil {
+	// Write data to the temporary file (as an example, write "Hello, world!")
+	if _, err := tempFile.Write(data); err != nil {
+		fmt.Printf("Failed to write to temp file: %v\n", err)
+		return "", err
+	}
+
+	// Close the temporary file
+	if err := tempFile.Close(); err != nil {
+		fmt.Printf("Failed to close temp file: %v\n", err)
+		return "", err
+	}
+
+	// Compress the file using ffmpeg
+	cmd := exec.Command("ffmpeg", "-i", tempFile.Name(), "-b:v", "1M", "-c:a", "copy", fullPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		fmt.Printf("Failed to compress video: %v, ffmpeg output: %s\n", err, output)
 		return "", err
 	}
 
