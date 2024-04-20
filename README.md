@@ -1,31 +1,25 @@
 # DD-PubSub
-## 目次
-- システム構成概要
-- 使用技術
-- 環境構築
-- ディレクトリ構造
-
-## システム構成概要
+## System Architecture Overview
 ![alt text](image-1.png)
-## システムフロー
+## System Flow
 ![alt text](image-2.png)
 ## Prerequisites
 - Go version 1.15 or higher
-- Docker 
-## 環境構築
+- Docker
+## Setup Environment
 ### Install DD-PubSub using go get:
-``` bash
+```bash
 go get github.com/malcoscos/dd-pubsub
 go get github.com/eclipse/paho.mqtt.golang
 ```
 ### Install mosquitto
-brokerとしてmosquittoをインストール
+Install Mosquitto as a broker:
 ``` bash
 docker pull eclipse-mosquitto
 docker run -it -p 1883:1883  --name mosquitto eclipse-mosquitto
 ```
-### MinIOストレージの構築
-ストレージ用のサーバーに対してMinIOストレージを構築
+### Build MinIO Storage
+Construct MinIO storage on the storage server:
 ``` bash
 docker pull minio/minio
 docker run -p 9000:9000 --name minio1 -e "MINIO_ROOT_USER=youraccesskey" -e "MINIO_ROOT_PASSWORD=yoursecretkey" -v /mnt/data:/data minio/minio server /data --console-address ":9001"
@@ -34,67 +28,70 @@ docker run -p 9000:9000 --name minio1 -e "MINIO_ROOT_USER=youraccesskey" -e "MIN
 ### Publisher
 ``` golang
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"os"
+  "fmt"
+  "log"
+  "os"
 
-	dd_pubsub "github.com/malcoscos/dd-pubsub"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+  dd_pubsub "github.com/malcoscos/dd-pubsub"
+  mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
-  // configure mqtt client options
+  // configure MQTT client options
   opts := mqtt.NewClientOptions()
   // add broker
   broker := fmt.Sprintf("tcp://%s:%s", "127.0.0.1", "1883")
   opts.AddBroker(broker)
-  // create mqtt client
+  // create MQTT client
   c := mqtt.NewClient(opts)
-  // publish data using dd-pubsub library
-  pub_arg := dd_pubsub.PubArg{
-  	Topic:      "hoge", // topic of publishing data
-  	Qos:        0,  // Qos level of publish message
-  	Retained:   false, // retain message in broker
-  	Payload:    "hoge",
-  	MqttClient: c,
-  	StrageAddr: "127.0.0.1", // strage addr
-  	StragePort: "9000", // strage port num
-  	StrageID:   "hoge", // strage id
-  	StrageKey:  "hoge", // strage key of using 
+  if token := c.Connect(); token.Wait() && token.Error() != nil {
+      log.Fatalf("Error connecting MQTT client: %s", token.Error())
   }
-
+  
+  // define arguments to publish data
+  pub_arg := dd_pubsub.PubArg{
+      Topic:      "your_topic_name",
+      Qos:        1,
+      Retained:   false,
+      Payload:    []byte("your message"),
+      MqttClient: c,
+  }
+  // publish the data
   dd_pubsub.Publish(&pub_arg)
+  // disconnect from MQTT broker
+  c.Disconnect(250)
 }
+
 ```
 ### Subscriber
 ```golang
 import (
-	"fmt"
+  "fmt"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	dd_pubsub "github.com/malcoscos/dd-pubsub"
+  mqtt "github.com/eclipse/paho.mqtt.golang"
+  dd_pubsub "github.com/malcoscos/dd-pubsub"
 )
 
 func main(){
-  // configure mqtt client options
-	opts := mqtt.NewClientOptions()
-	// add broker
-	broker := fmt.Sprintf("tcp://%s:%s", "127.0.0.1", "1883")
-	opts.AddBroker(broker)
-	// create mqtt client
-	c := mqtt.NewClient(opts)
-	// subscribe data using dd-pubsub library
-	sub_arg := dd_pubsub.SubArg{
-		Topic:      "demo", // subscribe topic name
-		Qos:        0, // Qos level of subscribe message
-		MqttClient: c,
-		StorePath:  "/path/to/subscribe/data",
-	}
+  // configure MQTT client options
+  opts := mqtt.NewClientOptions().AddBroker("tcp://127.0.0.1:1883")
+  // create MQTT client
+  c := mqtt.NewClient(opts)
+  if token := c.Connect(); token.Wait() && token.Error() != nil {
+      fmt.Printf("Error connecting MQTT client: %s\n", token.Error())
+      return
+  }
 
-	dd_pubsub.Subscribe(&sub_arg)
+  // define arguments to subscribe to data
+  sub_arg := dd_pubsub.SubArg{
+      Topic:      "your_topic_name",
+      Qos:        1,
+      MqttClient: c,
+  }
+  // subscribe to the topic
+  dd_pubsub.Subscribe(&sub_arg)
+  // disconnect from MQTT broker
+  c.Disconnect(250)
 }
+
 ```
-
-
-## ディレクトリ構造
